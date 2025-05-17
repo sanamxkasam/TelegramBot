@@ -16,7 +16,7 @@ module.exports = {
       "Silly API": "https://silly-5smc.onrender.com",
       "MirryKal API": "https://mirrykal.onrender.com",
       "Gemimi API": "https://geminiw.onrender.com",
-      "Telegram-bot API": "https://telegram-bot-ouae.onrender.com"
+      "Telegram-bot API": "https://telegrambot-m2gk.onrender.com"
     };
 
     let statusMessage = "🔥 *API Status:*\n\n";
