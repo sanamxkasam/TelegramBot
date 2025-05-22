@@ -1,3 +1,4 @@
+
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
@@ -18,6 +19,11 @@ function deleteAfterTimeout(filePath, timeout = 5000) {
       });
     }
   }, timeout);
+}
+
+// Escape Markdown characters for Telegram
+function escapeMarkdown(text) {
+  return text.replace(/([_*\[\]()~`>#+-=|{}.!\\])/g, "\\$1");
 }
 
 module.exports = {
@@ -53,11 +59,13 @@ module.exports = {
         thumbWriter.on("error", reject);
       });
 
+      const escapedTitle = escapeMarkdown(topVideo.title);
+
       await ctx.replyWithPhoto(
         { source: fs.createReadStream(thumbPath) },
         {
-          caption: `🎬 *${topVideo.title}*\n🔗 https://www.youtube.com/watch?v=${topVideo.videoId}`,
-          parse_mode: "Markdown",
+          caption: `ðŸŽ¬ *${escapedTitle}*\nðŸ”— https://www.youtube.com/watch?v=${topVideo.videoId}`,
+          parse_mode: "MarkdownV2",
         }
       );
 
