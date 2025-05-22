@@ -5,11 +5,11 @@ const ytSearch = require("yt-search");
 const { youtube } = require("btch-downloader");
 const axios = require("axios");
 
-// Cache folder setup
+// Cache folder
 const downloadDir = path.join(__dirname, "../cache");
 if (!fs.existsSync(downloadDir)) fs.mkdirSync(downloadDir, { recursive: true });
 
-// Auto-delete file after timeout
+// Auto-delete file
 function deleteAfterTimeout(filePath, timeout = 5000) {
   setTimeout(() => {
     if (fs.existsSync(filePath)) {
@@ -21,10 +21,10 @@ function deleteAfterTimeout(filePath, timeout = 5000) {
 }
 
 module.exports = {
-  name: "play",
-  description: "Play top YouTube song",
+  name: "video",
+  description: "Play YouTube video",
   category: "media",
-  usage: "/music song name",
+  usage: "/video song name",
   cooldown: 5,
   hasPermission: 0,
   credits: "Mirrykal",
@@ -34,14 +34,14 @@ module.exports = {
     const args = msgText.split(" ").slice(1);
     const songName = args.join(" ");
 
-    if (!songName) return ctx.reply("Gaane ka naam likho yaar!");
+    if (!songName) return ctx.reply("Gaane ya video ka naam likho!");
 
     try {
       const searchResults = await ytSearch(songName);
       const topVideo = searchResults.videos[0];
-      if (!topVideo) return ctx.reply("Kuch nahi mila! Gaane ka naam sahi likho.");
+      if (!topVideo) return ctx.reply("Kuch nahi mila! Naam check karo.");
 
-      // Thumbnail download
+      // Download thumbnail
       const thumbnailUrl = topVideo.thumbnail;
       const thumbPath = path.join(downloadDir, `thumb_${Date.now()}.jpg`);
       const thumbWriter = fs.createWriteStream(thumbPath);
@@ -56,46 +56,46 @@ module.exports = {
       await ctx.replyWithPhoto(
         { source: fs.createReadStream(thumbPath) },
         {
-          caption: `🎵 *${topVideo.title}*\n🔗 https://www.youtube.com/watch?v=${topVideo.videoId}`,
+          caption: `🎬 *${topVideo.title}*\n🔗 https://www.youtube.com/watch?v=${topVideo.videoId}`,
           parse_mode: "Markdown",
         }
       );
 
       deleteAfterTimeout(thumbPath);
 
-      // Use btch-downloader for audio
+      // btch-downloader for video URL
       const ytInfo = await youtube(`https://www.youtube.com/watch?v=${topVideo.videoId}`);
-      let audioUrl = null;
-      if (ytInfo.audio?.url) audioUrl = ytInfo.audio.url;
-      else if (Array.isArray(ytInfo.url)) audioUrl = ytInfo.url[0];
-      else if (typeof ytInfo.url === "string") audioUrl = ytInfo.url;
-      else if (ytInfo.formats?.[0]?.url) audioUrl = ytInfo.formats[0].url;
+      let videoUrl = null;
 
-      if (!audioUrl) throw new Error("Audio URL not found from btch-downloader.");
+      if (ytInfo.video?.url) videoUrl = ytInfo.video.url;
+      else if (Array.isArray(ytInfo.url)) videoUrl = ytInfo.url[0];
+      else if (typeof ytInfo.url === "string") videoUrl = ytInfo.url;
+      else if (ytInfo.formats?.[0]?.url) videoUrl = ytInfo.formats[0].url;
+
+      if (!videoUrl) throw new Error("Video URL not found.");
 
       const safeTitle = topVideo.title.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 50);
-      const filename = `${safeTitle}.mp3`;
-      const audioPath = path.join(downloadDir, filename);
+      const filename = `${safeTitle}.mp4`;
+      const videoPath = path.join(downloadDir, filename);
 
-      // Download audio
-      const audioWriter = fs.createWriteStream(audioPath);
+      const videoWriter = fs.createWriteStream(videoPath);
       await new Promise((resolve, reject) => {
-        https.get(audioUrl, (res) => {
+        https.get(videoUrl, (res) => {
           if (res.statusCode === 200) {
-            res.pipe(audioWriter);
-            audioWriter.on("finish", () => audioWriter.close(resolve));
+            res.pipe(videoWriter);
+            videoWriter.on("finish", () => videoWriter.close(resolve));
           } else {
-            reject(new Error(`Audio download failed. Status: ${res.statusCode}`));
+            reject(new Error(`Video download failed. Status: ${res.statusCode}`));
           }
         }).on("error", reject);
       });
 
-      await ctx.replyWithAudio({ source: fs.createReadStream(audioPath), filename });
-      deleteAfterTimeout(audioPath);
+      await ctx.replyWithVideo({ source: fs.createReadStream(videoPath), filename });
+      deleteAfterTimeout(videoPath);
 
     } catch (err) {
-      console.error("Error:", err.message);
-      ctx.reply("Kuch gadbad ho gayi. Thoda baad try karo.");
+      console.error("Video error:", err.message);
+      ctx.reply("Video download mein problem aayi. Baad mein try karo.");
     }
   }
 };
