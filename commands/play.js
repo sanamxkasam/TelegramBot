@@ -21,7 +21,7 @@ function deleteAfterTimeout(filePath, timeout = 5000) {
 }
 
 module.exports = {
-  name: "music",
+  name: "play",
   description: "Play top YouTube song",
   category: "media",
   usage: "/music song name",
