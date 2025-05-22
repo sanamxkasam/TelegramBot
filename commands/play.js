@@ -3,12 +3,13 @@ const path = require("path");
 const https = require("https");
 const ytSearch = require("yt-search");
 const { youtube } = require("btch-downloader");
+const axios = require("axios");
 
 // Cache folder setup
 const downloadDir = path.join(__dirname, "../cache");
 if (!fs.existsSync(downloadDir)) fs.mkdirSync(downloadDir, { recursive: true });
 
-// File auto-delete after timeout
+// Auto-delete file after timeout
 function deleteAfterTimeout(filePath, timeout = 5000) {
   setTimeout(() => {
     if (fs.existsSync(filePath)) {
@@ -20,7 +21,7 @@ function deleteAfterTimeout(filePath, timeout = 5000) {
 }
 
 module.exports = {
-  name: "play",
+  name: "music",
   description: "Play top YouTube song",
   category: "media",
   usage: "/music song name",
@@ -62,9 +63,13 @@ module.exports = {
 
       deleteAfterTimeout(thumbPath);
 
-      // YouTube audio via btch-downloader
+      // Use btch-downloader for audio
       const ytInfo = await youtube(`https://www.youtube.com/watch?v=${topVideo.videoId}`);
-      const audioUrl = ytInfo.audio?.url || ytInfo.url;
+      let audioUrl = null;
+      if (ytInfo.audio?.url) audioUrl = ytInfo.audio.url;
+      else if (Array.isArray(ytInfo.url)) audioUrl = ytInfo.url[0];
+      else if (typeof ytInfo.url === "string") audioUrl = ytInfo.url;
+      else if (ytInfo.formats?.[0]?.url) audioUrl = ytInfo.formats[0].url;
 
       if (!audioUrl) throw new Error("Audio URL not found from btch-downloader.");
 
@@ -72,6 +77,7 @@ module.exports = {
       const filename = `${safeTitle}.mp3`;
       const audioPath = path.join(downloadDir, filename);
 
+      // Download audio
       const audioWriter = fs.createWriteStream(audioPath);
       await new Promise((resolve, reject) => {
         https.get(audioUrl, (res) => {
